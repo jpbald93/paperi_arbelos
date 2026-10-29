@@ -170,7 +170,7 @@ theorem pappus_tangent_succ {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (n : ℕ) :
 
 /-- **Pappus chain theorem.** The centre of the `n`-th circle is at height `n` times its
 diameter above the line `AB`. -/
-theorem pappus_chain {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (n : ℕ) :
+theorem pappus_chain {a b : ℝ} (n : ℕ) :
     (pappusCircle a b n).center.im = n * (2 * (pappusCircle a b n).radius) := by
   exact famCircle_height a b n
 
@@ -184,7 +184,7 @@ theorem incircleChain_spec {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (n : ℕ) :
   refine ⟨pappus_tangent_big ha hb _, pappus_tangent_left ha hb _, ?_, pappus_tangent_succ ha hb _,
     ?_⟩
   · rw [← pappusCircle_zero ha hb]; exact pappus_tangent_succ ha hb 0
-  · rw [incircleChain, pappus_chain ha hb]; push_cast; ring
+  · rw [incircleChain, pappus_chain]; push_cast; ring
 
 /-- The inversion picture: the big circle (minus `A`) goes to the line `re = 2a`. -/
 theorem inversion_bigS {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :

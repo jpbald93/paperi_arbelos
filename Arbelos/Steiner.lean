@@ -42,7 +42,7 @@ theorem concentric_tangent {S₁ S₂ s : Sphere ℂ} (hc : S₁.center = S₂.c
 /-- **Steiner's porism, concentric case.** -/
 theorem steiner_concentric (S₁ S₂ : Sphere ℂ) (hc : S₁.center = S₂.center)
     (n : ℕ) (c : ZMod n → Sphere ℂ) (hchain : IsSteinerChain S₁ S₂ n c)
-    (s₀ : Sphere ℂ) (hs₀ : 0 < s₀.radius) (h₁ : S₁.IsExtTangent s₀) (h₂ : s₀.IsIntTangent S₂) :
+    (s₀ : Sphere ℂ) (h₁ : S₁.IsExtTangent s₀) (h₂ : s₀.IsIntTangent S₂) :
     ∃ d : ZMod n → Sphere ℂ, IsSteinerChain S₁ S₂ n d ∧ d 0 = s₀ := by
   obtain ⟨hr0, hd0⟩ := concentric_tangent hc h₁ h₂
   obtain ⟨hr, h1, h2, -⟩ := hchain 0
@@ -308,7 +308,7 @@ theorem steiner_porism (S₁ S₂ : Sphere ℂ) (h₁ : 0 < S₁.radius)
     (s₀ : Sphere ℂ) (hs₀ : 0 < s₀.radius) (h₁' : S₁.IsExtTangent s₀) (h₂' : s₀.IsIntTangent S₂) :
     ∃ d : ZMod n → Sphere ℂ, IsSteinerChain S₁ S₂ n d ∧ d 0 = s₀ := by
   by_cases hc : S₁.center = S₂.center
-  · exact steiner_concentric S₁ S₂ hc n c hchain s₀ hs₀ h₁' h₂'
+  · exact steiner_concentric S₁ S₂ hc n c hchain s₀ h₁' h₂'
   obtain ⟨o, hE₁, hE₂, hcen⟩ := exists_inversion_concentric S₁ S₂ h₁ hc hin
   have hEc : ∀ s : Sphere ℂ, s.IsIntTangent S₂ → 0 < powC o s :=
     fun s hs ↦ powC_pos_of_isIntTangent hE₂ hs
@@ -326,7 +326,7 @@ theorem steiner_porism (S₁ S₂ : Sphere ℂ) (h₁ : 0 < S₁.radius)
     rw [invSphere_radius e]; positivity
   have hs₀E := hEc _ h₂'
   obtain ⟨d, hd, hd0⟩ := steiner_concentric _ _ hcen n _ hchain' (invSphere o 1 s₀)
-    (by rw [invSphere_radius hs₀E]; positivity) (invSphere_isExtTangent hE₁ hs₀E h₁')
+    (invSphere_isExtTangent hE₁ hs₀E h₁')
     (invSphere_isIntTangent hs₀E hE₂ h₂')
   have hdE : ∀ i, 0 < powC o (d i) := fun i ↦ powC_pos_of_isIntTangent hT₂ (hd i).2.2.1
   refine ⟨fun i ↦ invSphere o 1 (d i), fun i ↦ ?_, ?_⟩

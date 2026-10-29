@@ -69,7 +69,7 @@ theorem ofReal_disc_area (r : ℝ) (hr : 0 ≤ r) :
   rw [← ENNReal.ofReal_pow hr, ← ENNReal.ofReal_coe_nnreal, NNReal.coe_real_pi,
     ← ENNReal.ofReal_mul (by positivity), mul_comm]
 
-theorem volume_half_of_two_mul {x : ENNReal} {A : ℝ} (hA : 0 ≤ A) (h : 2 * x = ENNReal.ofReal A) :
+theorem volume_half_of_two_mul {x : ENNReal} {A : ℝ} (h : 2 * x = ENNReal.ofReal A) :
     x = ENNReal.ofReal (A / 2) := by
   have h2 : (2 : ENNReal) * ENNReal.ofReal (A / 2) = ENNReal.ofReal A := by
     rw [show (2 : ENNReal) = ENNReal.ofReal 2 by simp, ← ENNReal.ofReal_mul (by norm_num)]
@@ -90,14 +90,14 @@ theorem conj_mem_closedBall_iff (c : ℝ) (r : ℝ) (z : ℂ) :
 /-- Area of a closed upper half disc centred on the real axis. -/
 theorem volume_closedHalfDisc (c r : ℝ) (hr : 0 ≤ r) :
     volume (Metric.closedBall (c : ℂ) r ∩ upperHalf) = ENNReal.ofReal (Real.pi * r ^ 2 / 2) := by
-  apply volume_half_of_two_mul (by positivity)
+  apply volume_half_of_two_mul
   rw [two_mul_volume_inter_upperHalf Metric.isClosed_closedBall.measurableSet
     (conj_mem_closedBall_iff c r), Complex.volume_closedBall, ofReal_disc_area r hr]
 
 /-- Area of an open upper half disc centred on the real axis. -/
 theorem volume_openHalfDisc (c r : ℝ) (hr : 0 ≤ r) :
     volume (Metric.ball (c : ℂ) r ∩ upperHalf) = ENNReal.ofReal (Real.pi * r ^ 2 / 2) := by
-  apply volume_half_of_two_mul (by positivity)
+  apply volume_half_of_two_mul
   rw [two_mul_volume_inter_upperHalf Metric.isOpen_ball.measurableSet
     (conj_mem_ball_iff c r), Complex.volume_ball, ofReal_disc_area r hr]
 
@@ -123,7 +123,7 @@ theorem arbelosRegion_eq (a b : ℝ) : arbelosRegion a b =
 /-- **Archimedes.** The area of the arbelos equals the area of the circle on the diameter `CD`,
 where `D` is the point where the perpendicular at `C` meets the big semicircle. -/
 theorem arbelos_area {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (D : ℂ) (hD : D ∈ bigS a b)
-    (hDperp : D ∈ perpC a b) (hDup : 0 < D.im) :
+    (hDperp : D ∈ perpC a b) :
     volume (arbelosRegion a b) = volume (Metric.ball (midpoint ℝ (ptC a b) D) (dist (ptC a b) D / 2)) := by
   have hR : 0 < a + b := by linarith
   -- the area of the arbelos

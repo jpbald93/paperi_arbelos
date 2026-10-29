@@ -75,7 +75,7 @@ I2.2 Lebesgue area of the arbelos = area of the disc with diameter CD.
 
 ```lean
 theorem arbelos_area {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (D : ℂ) (hD : D ∈ bigS a b)
-    (hDperp : D ∈ perpC a b) (hDup : 0 < D.im) :
+    (hDperp : D ∈ perpC a b) :
     volume (arbelosRegion a b) = volume (Metric.ball (midpoint ℝ (ptC a b) D) (dist (ptC a b) D / 2))
 ```
 
