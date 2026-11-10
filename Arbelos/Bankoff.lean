@@ -125,4 +125,51 @@ theorem bankoff {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (s₀ : Sphere ℂ)
     rw [← hC, hu, show v = a * b / (a + b) by rw [eq_div_iff hR.ne']; exact hv]; ring
   exact (sq_eq_sq₀ hs0 (by positivity)).1 hρ
 
+
+/-- **Bankoff's circle exists**: the circle with centre `2a + i·ab/(a+b)` and radius `ab/(a+b)`
+passes through `C` and the two points where the incircle touches the small semicircles. -/
+theorem bankoff_exists {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (s₀ : Sphere ℂ)
+    (hbig : s₀.IsIntTangent (bigS a b)) (hleft : (leftS a b).IsExtTangent s₀)
+    (hright : (rightS a b).IsExtTangent s₀) (hup : 0 < s₀.center.im)
+    (T₁ T₂ : ℂ) (hT₁ : (leftS a b).IsExtTangentAt s₀ T₁) (hT₂ : (rightS a b).IsExtTangentAt s₀ T₂) :
+    ∃ s : Sphere ℂ, ptC a b ∈ s ∧ T₁ ∈ s ∧ T₂ ∈ s ∧ s.radius = a * b / (a + b) := by
+  have hR : 0 < a + b := by linarith
+  have h0 := incircle_eq ha hb s₀ hbig hleft hright hup
+  subst h0
+  have hr := pappus_radius_pos ha hb 1
+  have e1 := extTangentAt_eq hT₁ ha hr
+  have e2 := extTangentAt_eq hT₂ hb hr
+  have hD1 : 0 < a ^ 2 + 2 * a * b + 2 * b ^ 2 := by positivity
+  have hD2 : 0 < 2 * a ^ 2 + 2 * a * b + b ^ 2 := by positivity
+  have x1 : T₁.re = 2 * a * (a + b) ^ 2 / (a ^ 2 + 2 * a * b + 2 * b ^ 2) := by
+    rw [e1]
+    simp only [leftS, pappusCircle, famCircle, famDen, Complex.add_re, Complex.mul_re,
+      Complex.ofReal_re, Complex.ofReal_im, Complex.sub_re, Complex.sub_im, zero_mul, sub_zero,
+      Nat.cast_one]
+    field_simp; ring
+  have y1 : T₁.im = 2 * a * b * (a + b) / (a ^ 2 + 2 * a * b + 2 * b ^ 2) := by
+    rw [e1]
+    simp only [leftS, pappusCircle, famCircle, famDen, Complex.add_im, Complex.mul_im,
+      Complex.ofReal_re, Complex.ofReal_im, Complex.sub_re, Complex.sub_im, zero_mul, add_zero,
+      sub_zero, zero_add, Nat.cast_one]
+    field_simp; ring
+  have x2 : T₂.re = 2 * a * (a + b) * (2 * a + b) / (2 * a ^ 2 + 2 * a * b + b ^ 2) := by
+    rw [e2]
+    simp only [rightS, pappusCircle, famCircle, famDen, Complex.add_re, Complex.mul_re,
+      Complex.ofReal_re, Complex.ofReal_im, Complex.sub_re, Complex.sub_im, zero_mul, sub_zero,
+      Nat.cast_one]
+    field_simp; ring
+  have y2 : T₂.im = 2 * a * b * (a + b) / (2 * a ^ 2 + 2 * a * b + b ^ 2) := by
+    rw [e2]
+    simp only [rightS, pappusCircle, famCircle, famDen, Complex.add_im, Complex.mul_im,
+      Complex.ofReal_re, Complex.ofReal_im, Complex.sub_re, Complex.sub_im, zero_mul, add_zero,
+      sub_zero, zero_add, Nat.cast_one]
+    field_simp; ring
+  have hρ : 0 ≤ a * b / (a + b) := by positivity
+  refine ⟨⟨⟨2 * a, a * b / (a + b)⟩, a * b / (a + b)⟩, ?_, ?_, ?_, rfl⟩ <;>
+    rw [mem_sphere_iff_sq hρ]
+  · simp [ptC]
+  · rw [x1, y1]; field_simp; ring
+  · rw [x2, y2]; field_simp; ring
+
 end Arbelos

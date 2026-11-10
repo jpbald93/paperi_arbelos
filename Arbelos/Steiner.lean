@@ -342,4 +342,190 @@ theorem steiner_porism (S₁ S₂ : Sphere ℂ) (h₁ : 0 < S₁.radius)
   · show invSphere o 1 (d 0) = s₀
     rw [hd0]; exact invSphere_invSphere hs₀E
 
+
+/-! ### Simple Steiner chains
+
+`IsSteinerChain` allows a circle to occur more than once (e.g. two tangent circles alternating).
+The classical notion asks for `n ≥ 3` distinct circles, and pairwise disjoint open discs. Both
+conditions are preserved by the rotation and inversion used in the proof of the porism. -/
+
+/-- A Steiner chain of `n ≥ 3` pairwise distinct circles. -/
+def IsSimpleSteinerChain (S₁ S₂ : Sphere ℂ) (n : ℕ) (c : ZMod n → Sphere ℂ) : Prop :=
+  IsSteinerChain S₁ S₂ n c ∧ 3 ≤ n ∧ Function.Injective c
+
+/-- The open discs bounded by the circles of `c` are pairwise disjoint. -/
+def HasDisjointDiscs {n : ℕ} (c : ZMod n → Sphere ℂ) : Prop :=
+  Pairwise fun i j ↦ Disjoint (Metric.ball (c i).center (c i).radius)
+    (Metric.ball (c j).center (c j).radius)
+
+/-- A simple Steiner chain whose circles bound pairwise disjoint open discs. -/
+def IsDisjointSteinerChain (S₁ S₂ : Sphere ℂ) (n : ℕ) (c : ZMod n → Sphere ℂ) : Prop :=
+  IsSimpleSteinerChain S₁ S₂ n c ∧ HasDisjointDiscs c
+
+theorem hasDisjointDiscs_iff {S₁ S₂ : Sphere ℂ} {n : ℕ} {c : ZMod n → Sphere ℂ}
+    (hc : IsSteinerChain S₁ S₂ n c) : HasDisjointDiscs c ↔
+      Pairwise fun i j ↦ (c i).radius + (c j).radius ≤ dist (c i).center (c j).center := by
+  unfold HasDisjointDiscs
+  constructor
+  · intro h i j hij; exact (disjoint_ball_ball_iff (hc i).1 (hc j).1).1 (h hij)
+  · intro h i j hij; exact (disjoint_ball_ball_iff (hc i).1 (hc j).1).2 (h hij)
+
+theorem rotSphere_injective {O w : ℂ} (hw : ‖w‖ = 1) : Function.Injective (rotSphere O w) := by
+  intro s t h
+  have hw0 : w ≠ 0 := by rintro rfl; simp at hw
+  have hc := congrArg Sphere.center h
+  have hr := congrArg Sphere.radius h
+  simp only [rotSphere] at hc hr
+  exact Sphere.ext (sub_left_inj.1 (mul_left_cancel₀ hw0 (add_left_cancel hc))) hr
+
+/-- Inversion is injective on circles of positive power. -/
+theorem invSphere_inj {c : ℂ} {s t : Sphere ℂ} (hs : 0 < powC c s) (ht : 0 < powC c t)
+    (h : invSphere c 1 s = invSphere c 1 t) : s = t := by
+  rw [← invSphere_invSphere hs, h, invSphere_invSphere ht]
+
+/-- Inversion in a circle of positive power with respect to both circles preserves disjointness
+of the open discs. -/
+theorem invSphere_sep {c : ℂ} {s t : Sphere ℂ} (hs : 0 < powC c s) (ht : 0 < powC c t)
+    (hrs : 0 ≤ s.radius) (hrt : 0 ≤ t.radius)
+    (h : s.radius + t.radius ≤ dist s.center t.center) :
+    (invSphere c 1 s).radius + (invSphere c 1 t).radius ≤
+      dist (invSphere c 1 s).center (invSphere c 1 t).center := by
+  rw [invSphere_radius hs, invSphere_radius ht]
+  have hsq : (s.radius + t.radius) ^ 2 ≤ dist s.center t.center ^ 2 :=
+    pow_le_pow_left₀ (by positivity) h 2
+  refine (pow_le_pow_iff_left₀ (by positivity) dist_nonneg two_ne_zero).1 ?_
+  rw [dist_sq_sub _ _ c] at hsq ⊢
+  rw [invSphere_sub_re, invSphere_sub_re, invSphere_sub_im, invSphere_sub_im]
+  have hs' := hs; have ht' := ht
+  rw [powC_eq] at hs' ht'
+  rw [powC_eq c s, powC_eq c t]
+  have e := ext_alg _ _ _ _ _ _ hs'.ne' ht'.ne'
+  have hpos := div_nonneg (sub_nonneg.2 hsq) (mul_pos hs' ht').le
+  rw [← e] at hpos
+  linarith
+
+/-- The concentric case, keeping track of distinctness and disjointness: the rotated chain is
+injective (resp. has disjoint discs) if the original one is. -/
+theorem steiner_concentric_strong (S₁ S₂ : Sphere ℂ) (hc : S₁.center = S₂.center)
+    (n : ℕ) (c : ZMod n → Sphere ℂ) (hchain : IsSteinerChain S₁ S₂ n c)
+    (s₀ : Sphere ℂ) (h₁ : S₁.IsExtTangent s₀) (h₂ : s₀.IsIntTangent S₂) :
+    ∃ d : ZMod n → Sphere ℂ, IsSteinerChain S₁ S₂ n d ∧ d 0 = s₀ ∧
+      (Function.Injective c → Function.Injective d) ∧ (HasDisjointDiscs c → HasDisjointDiscs d) := by
+  obtain ⟨hr0, hd0⟩ := concentric_tangent hc h₁ h₂
+  obtain ⟨hr, h1, h2, -⟩ := hchain 0
+  obtain ⟨hrc, hdc⟩ := concentric_tangent hc h1 h2
+  have hS₁ : 0 ≤ S₁.radius := ((Sphere.isExtTangent_iff_dist_center).1 h₁).2.1
+  have hm : 0 < (S₁.radius + S₂.radius) / 2 := by linarith
+  set O := S₁.center
+  have hne : (c 0).center - O ≠ 0 := by
+    intro h; rw [sub_eq_zero] at h; rw [h, dist_self] at hdc; linarith
+  set w := (s₀.center - O) / ((c 0).center - O) with hwdef
+  have hw : ‖w‖ = 1 := by
+    rw [hwdef, norm_div, ← Complex.dist_eq, ← Complex.dist_eq, dist_comm, hd0, dist_comm, hdc,
+      div_self hm.ne']
+  have rot_ext : ∀ s : Sphere ℂ, S₁.IsExtTangent s → S₁.IsExtTangent (rotSphere O w s) := by
+    intro s hs
+    rw [Sphere.isExtTangent_iff_dist_center] at hs ⊢
+    simp only [rotSphere]
+    rw [dist_center_rot hw]; exact hs
+  have rot_int : ∀ s : Sphere ℂ, s.IsIntTangent S₂ → (rotSphere O w s).IsIntTangent S₂ := by
+    intro s hs
+    rw [Sphere.isIntTangent_iff_dist_center] at hs ⊢
+    simp only [rotSphere]
+    rw [← hc, dist_comm, dist_center_rot hw, dist_comm, hc]; exact hs
+  have hd : IsSteinerChain S₁ S₂ n (fun i ↦ rotSphere O w (c i)) := by
+    intro i
+    obtain ⟨hp, ha, hb, hn⟩ := hchain i
+    refine ⟨hp, rot_ext _ ha, rot_int _ hb, ?_⟩
+    rw [Sphere.isExtTangent_iff_dist_center] at hn ⊢
+    simp only [rotSphere]
+    rw [dist_rot_rot hw]; exact hn
+  refine ⟨fun i ↦ rotSphere O w (c i), hd, ?_, fun hi ↦ (rotSphere_injective hw).comp hi, ?_⟩
+  · simp only [rotSphere]
+    refine Sphere.ext ?_ (by rw [hrc, hr0])
+    rw [hwdef, div_mul_cancel₀ _ hne]; ring
+  · rw [hasDisjointDiscs_iff hchain, hasDisjointDiscs_iff hd]
+    intro hdis i j hij
+    simp only [rotSphere]
+    rw [dist_rot_rot hw]; exact hdis hij
+
+/-- **Steiner's porism, strong form.** The chain through `s₀` produced by the proof of
+`steiner_porism` is injective (resp. has disjoint discs) whenever the given chain is. -/
+theorem steiner_porism_strong (S₁ S₂ : Sphere ℂ) (h₁ : 0 < S₁.radius)
+    (hin : dist S₁.center S₂.center < S₂.radius - S₁.radius)
+    (n : ℕ) (c : ZMod n → Sphere ℂ) (hchain : IsSteinerChain S₁ S₂ n c)
+    (s₀ : Sphere ℂ) (h₁' : S₁.IsExtTangent s₀) (h₂' : s₀.IsIntTangent S₂) :
+    ∃ d : ZMod n → Sphere ℂ, IsSteinerChain S₁ S₂ n d ∧ d 0 = s₀ ∧
+      (Function.Injective c → Function.Injective d) ∧ (HasDisjointDiscs c → HasDisjointDiscs d) := by
+  by_cases hc : S₁.center = S₂.center
+  · exact steiner_concentric_strong S₁ S₂ hc n c hchain s₀ h₁' h₂'
+  obtain ⟨o, hE₁, hE₂, hcen⟩ := exists_inversion_concentric S₁ S₂ h₁ hc hin
+  have hEc : ∀ s : Sphere ℂ, s.IsIntTangent S₂ → 0 < powC o s :=
+    fun s hs ↦ powC_pos_of_isIntTangent hE₂ hs
+  have hcE : ∀ i, 0 < powC o (c i) := fun i ↦ hEc _ (hchain i).2.2.1
+  have hT₁ : 0 < powC o (invSphere o 1 S₁) := by rw [powC_invSphere hE₁]; positivity
+  have hT₂ : 0 < powC o (invSphere o 1 S₂) := by rw [powC_invSphere hE₂]; positivity
+  have hchain' : IsSteinerChain (invSphere o 1 S₁) (invSphere o 1 S₂) n
+      (fun i ↦ invSphere o 1 (c i)) := by
+    intro i
+    obtain ⟨hp, ha, hb, hn⟩ := hchain i
+    have e := hcE i
+    refine ⟨?_, invSphere_isExtTangent hE₁ e ha, invSphere_isIntTangent e hE₂ hb,
+      invSphere_isExtTangent e (hcE (i + 1)) hn⟩
+    show 0 < (invSphere o 1 (c i)).radius
+    rw [invSphere_radius e]; positivity
+  have hs₀E := hEc _ h₂'
+  obtain ⟨d, hd, hd0, hdinj, hddis⟩ := steiner_concentric_strong _ _ hcen n _ hchain'
+    (invSphere o 1 s₀) (invSphere_isExtTangent hE₁ hs₀E h₁') (invSphere_isIntTangent hs₀E hE₂ h₂')
+  have hdE : ∀ i, 0 < powC o (d i) := fun i ↦ powC_pos_of_isIntTangent hT₂ (hd i).2.2.1
+  have he : IsSteinerChain S₁ S₂ n (fun i ↦ invSphere o 1 (d i)) := by
+    intro i
+    obtain ⟨hp, ha, hb, hn⟩ := hd i
+    have e := hdE i
+    refine ⟨?_, ?_, ?_, invSphere_isExtTangent e (hdE (i + 1)) hn⟩
+    · show 0 < (invSphere o 1 (d i)).radius
+      rw [invSphere_radius e]; positivity
+    · have := invSphere_isExtTangent hT₁ e ha
+      rwa [invSphere_invSphere hE₁] at this
+    · have := invSphere_isIntTangent e hT₂ hb
+      rwa [invSphere_invSphere hE₂] at this
+  refine ⟨fun i ↦ invSphere o 1 (d i), he, ?_, fun hi ↦ ?_, fun hdis ↦ ?_⟩
+  · show invSphere o 1 (d 0) = s₀
+    rw [hd0]; exact invSphere_invSphere hs₀E
+  · intro i j hij
+    exact hdinj (fun i j hij ↦ hi (invSphere_inj (hcE i) (hcE j) hij))
+      (invSphere_inj (hdE i) (hdE j) hij)
+  · have h' : HasDisjointDiscs (fun i ↦ invSphere o 1 (c i)) := by
+      rw [hasDisjointDiscs_iff hchain']
+      rw [hasDisjointDiscs_iff hchain] at hdis
+      intro i j hij
+      exact invSphere_sep (hcE i) (hcE j) (hchain i).1.le (hchain j).1.le (hdis hij)
+    have h'' := hddis h'
+    rw [hasDisjointDiscs_iff hd] at h''
+    rw [hasDisjointDiscs_iff he]
+    intro i j hij
+    exact invSphere_sep (hdE i) (hdE j) (hd i).1.le (hd j).1.le (h'' hij)
+
+/-- **Steiner's porism for simple chains.** If a Steiner chain of `n ≥ 3` distinct circles exists
+between `S₁` and a circle `S₂` containing it, then one exists starting from any circle `s₀`
+tangent to both. -/
+theorem steiner_porism_simple (S₁ S₂ : Sphere ℂ) (h₁ : 0 < S₁.radius)
+    (hin : dist S₁.center S₂.center < S₂.radius - S₁.radius)
+    (n : ℕ) (c : ZMod n → Sphere ℂ) (hchain : IsSimpleSteinerChain S₁ S₂ n c)
+    (s₀ : Sphere ℂ) (h₁' : S₁.IsExtTangent s₀) (h₂' : s₀.IsIntTangent S₂) :
+    ∃ d : ZMod n → Sphere ℂ, IsSimpleSteinerChain S₁ S₂ n d ∧ d 0 = s₀ := by
+  obtain ⟨hc, hn, hinj⟩ := hchain
+  obtain ⟨d, hd, hd0, hdinj, -⟩ := steiner_porism_strong S₁ S₂ h₁ hin n c hc s₀ h₁' h₂'
+  exact ⟨d, ⟨hd, hn, hdinj hinj⟩, hd0⟩
+
+/-- **Steiner's porism for simple chains with disjoint discs** (the classical formulation). -/
+theorem steiner_porism_disjoint (S₁ S₂ : Sphere ℂ) (h₁ : 0 < S₁.radius)
+    (hin : dist S₁.center S₂.center < S₂.radius - S₁.radius)
+    (n : ℕ) (c : ZMod n → Sphere ℂ) (hchain : IsDisjointSteinerChain S₁ S₂ n c)
+    (s₀ : Sphere ℂ) (h₁' : S₁.IsExtTangent s₀) (h₂' : s₀.IsIntTangent S₂) :
+    ∃ d : ZMod n → Sphere ℂ, IsDisjointSteinerChain S₁ S₂ n d ∧ d 0 = s₀ := by
+  obtain ⟨⟨hc, hn, hinj⟩, hdis⟩ := hchain
+  obtain ⟨d, hd, hd0, hdinj, hddis⟩ := steiner_porism_strong S₁ S₂ h₁ hin n c hc s₀ h₁' h₂'
+  exact ⟨d, ⟨⟨hd, hn, hdinj hinj⟩, hddis hdis⟩, hd0⟩
+
 end Arbelos
