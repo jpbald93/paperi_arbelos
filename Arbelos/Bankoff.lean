@@ -132,7 +132,8 @@ theorem bankoff_exists {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (s₀ : Sphere ℂ)
     (hbig : s₀.IsIntTangent (bigS a b)) (hleft : (leftS a b).IsExtTangent s₀)
     (hright : (rightS a b).IsExtTangent s₀) (hup : 0 < s₀.center.im)
     (T₁ T₂ : ℂ) (hT₁ : (leftS a b).IsExtTangentAt s₀ T₁) (hT₂ : (rightS a b).IsExtTangentAt s₀ T₂) :
-    ∃ s : Sphere ℂ, ptC a b ∈ s ∧ T₁ ∈ s ∧ T₂ ∈ s ∧ s.radius = a * b / (a + b) := by
+    ∃ s : Sphere ℂ, ptC a b ∈ s ∧ T₁ ∈ s ∧ T₂ ∈ s ∧ s.radius = a * b / (a + b) ∧
+      s.center = ⟨2 * a, a * b / (a + b)⟩ := by
   have hR : 0 < a + b := by linarith
   have h0 := incircle_eq ha hb s₀ hbig hleft hright hup
   subst h0
@@ -166,7 +167,7 @@ theorem bankoff_exists {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (s₀ : Sphere ℂ)
       sub_zero, zero_add, Nat.cast_one]
     field_simp; ring
   have hρ : 0 ≤ a * b / (a + b) := by positivity
-  refine ⟨⟨⟨2 * a, a * b / (a + b)⟩, a * b / (a + b)⟩, ?_, ?_, ?_, rfl⟩ <;>
+  refine ⟨⟨⟨2 * a, a * b / (a + b)⟩, a * b / (a + b)⟩, ?_, ?_, ?_, rfl, rfl⟩ <;>
     rw [mem_sphere_iff_sq hρ]
   · simp [ptC]
   · rw [x1, y1]; field_simp; ring
